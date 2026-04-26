@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Symptom Information Finder</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --teal: #0d9488; --teal-light: #ccfbf1; --teal-dark: #0f766e;
+      --bg: #f0fdfa; --card: #ffffff; --text: #134e4a; --border: #99f6e4;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: linear-gradient(135deg, #134e4a 0%, #0d9488 60%, #2dd4bf 100%);
+      padding: 2.5rem 1.5rem 3.5rem; text-align: center; position: relative; overflow: hidden;
+    }
+    header::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 70% 20%, rgba(255,255,255,.09) 0%, transparent 60%);
+    }
+    header::after {
+      content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+      height: 40px; background: var(--bg); clip-path: ellipse(55% 100% at 50% 100%);
+    }
+    .badge {
+      display: inline-block; background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.25); color: #a7f3d0;
+      font-size: .72rem; font-weight: 600; letter-spacing: .12em;
+      text-transform: uppercase; padding: .3rem .85rem;
+      border-radius: 999px; margin-bottom: 1rem; position: relative;
+    }
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.8rem, 5vw, 2.8rem); color: #fff;
+      line-height: 1.15; margin-bottom: .75rem; position: relative;
+    }
+    header p { color: #a7f3d0; font-size: .95rem; max-width: 500px; margin: 0 auto; line-height: 1.6; position: relative; }
+
+    .disclaimer-banner {
+      background: #fef3c7; border-bottom: 2px solid #fde68a;
+      padding: .65rem 1.5rem; text-align: center;
+      font-size: .8rem; color: #92400e; font-weight: 500;
+    }
+
+    main { max-width: 740px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+
+    .input-card {
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 20px; padding: 2rem;
+      box-shadow: 0 4px 24px rgba(13,148,136,.08);
+      margin-bottom: 2rem; animation: fadeUp .4s ease both;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+    .field-label { display: block; font-weight: 600; font-size: .88rem; color: var(--teal-dark); margin-bottom: .55rem; }
+
+    .tag-area {
+      display: flex; flex-wrap: wrap; gap: .45rem; min-height: 52px;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      padding: .55rem .7rem; background: var(--bg); cursor: text; transition: border-color .2s;
+    }
+    .tag-area:focus-within { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(13,148,136,.1); }
+    .tag {
+      display: flex; align-items: center; gap: .3rem;
+      background: var(--teal-light); color: var(--teal-dark);
+      border-radius: 999px; padding: .25rem .7rem;
+      font-size: .8rem; font-weight: 600; animation: popIn .15s ease;
+    }
+    @keyframes popIn { from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
+    .tag button { background: none; border: none; cursor: pointer; color: var(--teal-dark); font-size: 1rem; line-height:1; opacity:.6; transition: opacity .15s; }
+    .tag button:hover { opacity: 1; }
+    #symptom-input { border: none; outline: none; background: transparent; font-family: inherit; font-size: .92rem; color: var(--text); min-width: 140px; flex: 1; }
+    .hint { font-size: .75rem; color: #5eead4; margin-top: .35rem; }
+
+    .chips-wrap { margin-top: 1rem; }
+    .chips-wrap p { font-size: .78rem; color: #aaa; margin-bottom: .45rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .chip { background: #f0fdfa; border: 1px solid var(--border); color: var(--teal); border-radius: 999px; padding: .22rem .7rem; font-size: .76rem; cursor: pointer; transition: background .15s, color .15s; }
+    .chip:hover { background: var(--teal-light); color: var(--teal-dark); }
+
+    .extra-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.1rem; }
+    @media(max-width:480px){ .extra-row { grid-template-columns: 1fr; } }
+    .field select, .field input {
+      width: 100%; padding: .55rem .8rem; border: 1.5px solid var(--border);
+      border-radius: 10px; background: var(--bg); font-family: inherit;
+      font-size: .88rem; color: var(--text); outline: none; transition: border-color .2s;
+    }
+    .field select:focus, .field input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(13,148,136,.1); }
+
+    .btn-primary {
+      margin-top: 1.4rem; width: 100%; padding: .9rem;
+      background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+      color: #fff; border: none; border-radius: 12px; font-family: inherit;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(13,148,136,.3);
+      transition: opacity .2s, transform .1s, box-shadow .2s;
+    }
+    .btn-primary:hover { opacity:.9; transform:translateY(-1px); }
+
+    #result { display: none; animation: fadeUp .4s ease both; }
+    .result-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.5rem; }
+    .result-header h2 { font-family: 'DM Serif Display', serif; font-size: 1.55rem; color: var(--text); }
+    .btn-reset { background: none; border: 1.5px solid var(--border); color: var(--teal); border-radius: 10px; padding: .4rem 1rem; font-family: inherit; font-size: .83rem; font-weight: 600; cursor: pointer; transition: background .15s; }
+    .btn-reset:hover { background: var(--teal-light); }
+
+    .section { background: var(--card); border: 1.5px solid var(--border); border-radius: 16px; padding: 1.4rem; margin-bottom: 1.1rem; box-shadow: 0 2px 12px rgba(13,148,136,.05); animation: fadeUp .35s ease both; }
+    .section:nth-child(2){animation-delay:.05s} .section:nth-child(3){animation-delay:.1s} .section:nth-child(4){animation-delay:.15s} .section:nth-child(5){animation-delay:.2s}
+    .section-title { display: flex; align-items: center; gap: .5rem; font-weight: 700; font-size: .92rem; color: var(--teal-dark); margin-bottom: .9rem; }
+    .sicon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .9rem; }
+    .si-blue{background:#dbeafe} .si-amber{background:#fef3c7} .si-red{background:#fee2e2} .si-green{background:#dcfce7}
+    .section p, .section li { font-size: .91rem; line-height: 1.72; color: #1e4a46; }
+    .section ul { padding-left: 1.15rem; }
+    .section ul li { margin-bottom: .3rem; }
+    .section strong { color: var(--teal-dark); }
+
+    .condition-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: .85rem 1rem; margin-bottom: .65rem; }
+    .condition-card:last-child { margin-bottom: 0; }
+    .condition-name { font-weight: 700; font-size: .9rem; color: var(--teal-dark); margin-bottom: .25rem; }
+    .condition-desc { font-size: .85rem; color: #2d6a65; line-height: 1.6; }
+    .match-bar-wrap { margin-top: .4rem; }
+    .match-label { font-size: .72rem; color: #5eead4; margin-bottom: .2rem; }
+    .match-bar-bg { height: 5px; background: var(--teal-light); border-radius: 999px; overflow: hidden; }
+    .match-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--teal), #2dd4bf); transition: width .6s ease; }
+
+    .urgency { display: inline-flex; align-items: center; gap: .4rem; border-radius: 999px; padding: .32rem .95rem; font-size: .8rem; font-weight: 700; margin-bottom: .9rem; }
+    .urgency.low{background:#dcfce7;color:#166534} .urgency.medium{background:#fef3c7;color:#92400e} .urgency.high{background:#fee2e2;color:#991b1b}
+
+    .footer-disclaimer { background: #fef3c7; border: 1px solid #fde68a; border-radius: 12px; padding: .95rem 1.1rem; font-size: .79rem; color: #92400e; line-height: 1.6; }
+    .no-match { background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 14px; padding: 1.5rem; text-align: center; color: #9a3412; font-size: .9rem; line-height: 1.6; }
+    .no-match strong { display: block; font-size: 1.1rem; margin-bottom: .4rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">General Information Only — Not Medical Advice</div>
+  <h1>Symptom Information<br>Finder</h1>
+  <p>Enter your symptoms to get a structured health information sheet about possible conditions and when to seek care.</p>
+</header>
+
+<div class="disclaimer-banner">
+  ⚠️ This tool provides <strong>general health information only</strong> — always consult a qualified healthcare professional.
+</div>
+
+<main>
+  <div class="input-card" id="input-section">
+    <label class="field-label">Your Symptoms</label>
+    <div class="tag-area" id="tag-area" onclick="document.getElementById('symptom-input').focus()">
+      <input id="symptom-input" placeholder="Type a symptom and press Enter…" autocomplete="off" />
+    </div>
+    <div class="hint">Press <strong>Enter</strong> or <strong>comma</strong> after each symptom</div>
+
+    <div class="chips-wrap">
+      <p>Quick add:</p>
+      <div class="chips">
+        <span class="chip" onclick="addTag('Headache')">Headache</span>
+        <span class="chip" onclick="addTag('Fever')">Fever</span>
+        <span class="chip" onclick="addTag('Fatigue')">Fatigue</span>
+        <span class="chip" onclick="addTag('Cough')">Cough</span>
+        <span class="chip" onclick="addTag('Nausea')">Nausea</span>
+        <span class="chip" onclick="addTag('Sore throat')">Sore throat</span>
+        <span class="chip" onclick="addTag('Runny nose')">Runny nose</span>
+        <span class="chip" onclick="addTag('Body aches')">Body aches</span>
+        <span class="chip" onclick="addTag('Chills')">Chills</span>
+        <span class="chip" onclick="addTag('Dizziness')">Dizziness</span>
+        <span class="chip" onclick="addTag('Shortness of breath')">Shortness of breath</span>
+        <span class="chip" onclick="addTag('Chest pain')">Chest pain</span>
+        <span class="chip" onclick="addTag('Stomach pain')">Stomach pain</span>
+        <span class="chip" onclick="addTag('Diarrhea')">Diarrhea</span>
+        <span class="chip" onclick="addTag('Vomiting')">Vomiting</span>
+        <span class="chip" onclick="addTag('Loss of appetite')">Loss of appetite</span>
+        <span class="chip" onclick="addTag('Rash')">Rash</span>
+        <span class="chip" onclick="addTag('Joint pain')">Joint pain</span>
+      </div>
+    </div>
+
+    <div class="extra-row">
+      <div class="field">
+        <label class="field-label">Duration</label>
+        <select id="duration">
+          <option value="">Not specified</option>
+          <option>Less than 24 hours</option>
+          <option>1–3 days</option>
+          <option>4–7 days</option>
+          <option>1–2 weeks</option>
+          <option>More than 2 weeks</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Severity (1–10)</label>
+        <input type="number" id="severity" min="1" max="10" placeholder="e.g. 6" />
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="findInfo()">🔍 Find Information</button>
+  </div>
+
+  <div id="result">
+    <div class="result-header">
+      <h2>📋 Your Information Sheet</h2>
+      <button class="btn-reset" onclick="resetForm()">← New Search</button>
+    </div>
+    <div id="result-content"></div>
+  </div>
+</main>
+
+<script>
+const SYMPTOM_DB = [
+  {
+    name: "Common Cold",
+    keywords: ["runny nose","sneezing","sore throat","cough","congestion","mild fever","fatigue","headache","body aches"],
+    description: "A viral infection of the upper respiratory tract. Very common and usually mild.",
+    overview: "The common cold is caused by viruses (usually rhinovirus) and affects the nose and throat. It typically resolves on its own within 7–10 days without any specific medical treatment.",
+    selfCare: ["Rest as much as possible","Drink plenty of fluids — water, warm soups, herbal teas","Use saline nasal spray to relieve congestion","Gargle warm salt water for sore throat relief","Over-the-counter decongestants or antihistamines may help"],
+    urgency: "low",
+    urgencyReason: "Common colds are mild and self-resolving in most healthy adults within 7–10 days.",
+    warningSigns: ["Fever above 39°C (103°F)","Symptoms lasting more than 10 days","Severe headache or sinus pain","Difficulty breathing or wheezing","Ear pain or discharge"]
+  },
+  {
+    name: "Influenza (Flu)",
+    keywords: ["fever","chills","body aches","fatigue","headache","cough","sore throat","runny nose","vomiting","nausea"],
+    description: "A contagious respiratory illness caused by influenza viruses, more severe than the common cold.",
+    overview: "Influenza causes sudden onset of fever, chills, muscle aches, and fatigue. It spreads through respiratory droplets and peaks in winter months. Most people recover in 1–2 weeks.",
+    selfCare: ["Rest completely — avoid strenuous activity","Stay well-hydrated with fluids and electrolytes","Take fever reducers like paracetamol if needed","Isolate yourself to prevent spreading to others","Antiviral medications are most effective within 48 hours of symptom onset"],
+    urgency: "medium",
+    urgencyReason: "Flu can become serious, especially in the elderly, young children, or those with underlying health conditions.",
+    warningSigns: ["Difficulty breathing or shortness of breath","Persistent chest pain or pressure","Severe or persistent vomiting","Confusion or altered mental status","Symptoms improve then suddenly worsen","Fever above 40°C / 104°F"]
+  },
+  {
+    name: "COVID-19",
+    keywords: ["fever","cough","fatigue","shortness of breath","loss of smell","loss of taste","body aches","headache","sore throat","chills","nausea","diarrhea"],
+    description: "A respiratory illness caused by SARS-CoV-2 with a wide range of possible symptoms.",
+    overview: "COVID-19 can range from mild cold-like symptoms to severe respiratory illness. Loss of smell or taste is a distinctive symptom. Symptoms typically appear 2–14 days after exposure.",
+    selfCare: ["Isolate immediately to protect others","Rest and drink plenty of fluids","Monitor your oxygen levels if you have a pulse oximeter","Take fever reducers as needed","Get tested and follow local health authority guidelines"],
+    urgency: "medium",
+    urgencyReason: "Most cases are mild but some can deteriorate rapidly, especially in high-risk groups such as the elderly or immunocompromised.",
+    warningSigns: ["Difficulty breathing or shortness of breath","Persistent chest pain or pressure","Lips or face turning bluish","Confusion or inability to stay awake","Oxygen saturation below 94%"]
+  },
+  {
+    name: "Gastroenteritis (Stomach Flu)",
+    keywords: ["nausea","vomiting","diarrhea","stomach pain","abdominal cramps","fever","fatigue","loss of appetite","chills"],
+    description: "Inflammation of the stomach and intestines, usually caused by a viral or bacterial infection.",
+    overview: "Often called 'stomach flu' (unrelated to influenza), gastroenteritis causes digestive upset. It typically passes within 1–3 days. Dehydration is the primary concern to watch for.",
+    selfCare: ["Sip clear fluids frequently — water or oral rehydration salts","Avoid solid food until vomiting stops","Gradually reintroduce bland foods: rice, toast, bananas","Avoid dairy, fatty, or spicy foods temporarily","Wash hands frequently to avoid spreading infection"],
+    urgency: "low",
+    urgencyReason: "Most cases resolve on their own. The main risk is dehydration from fluid loss.",
+    warningSigns: ["Signs of severe dehydration — dry mouth, no urination, sunken eyes","Blood in stool or vomit","Fever above 39°C (102°F)","Vomiting lasting more than 2 days","Severe or worsening abdominal pain"]
+  },
+  {
+    name: "Migraine",
+    keywords: ["headache","nausea","vomiting","dizziness","sensitivity to light","sensitivity to sound","fatigue","visual disturbances","neck pain"],
+    description: "A neurological condition causing intense, often throbbing head pain, usually on one side.",
+    overview: "Migraines are recurring headaches that can be debilitating. They may be preceded by an 'aura' of visual or sensory changes. Common triggers include stress, hormonal changes, certain foods, and sleep disruption.",
+    selfCare: ["Rest in a dark, quiet room","Apply a cold or warm compress to the head or neck","Stay hydrated — dehydration can worsen migraines","Take over-the-counter pain relievers early in the episode","Identify and track personal triggers in a diary"],
+    urgency: "low",
+    urgencyReason: "Most migraines are manageable at home, though recurring migraines may benefit from professional management.",
+    warningSigns: ["Sudden, severe 'thunderclap' headache — the worst of your life","Headache with fever and stiff neck","Headache following a head injury","New headache pattern after age 50","Headache with vision loss, weakness, or speech difficulty"]
+  },
+  {
+    name: "Allergic Rhinitis (Hay Fever)",
+    keywords: ["runny nose","sneezing","itchy eyes","nasal congestion","watery eyes","cough","fatigue","headache","itchy throat"],
+    description: "An allergic reaction causing cold-like symptoms triggered by allergens such as pollen, dust, or pet dander.",
+    overview: "Allergic rhinitis is very common and not contagious. Symptoms often occur seasonally (spring/summer) or year-round depending on the allergen trigger. It is not dangerous but can affect quality of life.",
+    selfCare: ["Identify and minimise exposure to your allergen triggers","Keep windows closed during high pollen seasons","Use over-the-counter antihistamines","Nasal corticosteroid sprays are highly effective for regular sufferers","Shower after being outdoors to remove pollen from skin and hair"],
+    urgency: "low",
+    urgencyReason: "Allergic rhinitis is not a medical emergency and can typically be managed with over-the-counter medications.",
+    warningSigns: ["Severe difficulty breathing or wheezing","Swelling of face, lips, or throat (possible severe allergy)","Symptoms not responding to antihistamines after 2 weeks","Frequent sinus infections"]
+  },
+  {
+    name: "Hypertension (High Blood Pressure)",
+    keywords: ["headache","dizziness","chest pain","shortness of breath","nausea","blurred vision","fatigue","nosebleed","palpitations"],
+    description: "A condition where blood pressure in the arteries is persistently elevated, often with few symptoms.",
+    overview: "Often called the 'silent killer' because it usually has no symptoms. When symptoms appear, they may indicate severely elevated pressure. It is a major risk factor for heart disease and stroke.",
+    selfCare: ["Reduce salt intake in your diet","Exercise regularly — aim for 30 minutes most days","Maintain a healthy body weight","Limit alcohol consumption","Manage stress through relaxation techniques","Monitor blood pressure regularly if you have a home device"],
+    urgency: "high",
+    urgencyReason: "Symptoms associated with high blood pressure may indicate a hypertensive crisis requiring immediate medical attention.",
+    warningSigns: ["Sudden severe headache unlike any before","Chest pain or tightness","Sudden vision changes","Difficulty speaking or understanding speech","Sudden weakness or numbness in face, arm, or leg","Severe shortness of breath"]
+  },
+  {
+    name: "Anemia",
+    keywords: ["fatigue","weakness","dizziness","shortness of breath","headache","pale skin","cold hands","cold feet","chest pain","palpitations","loss of appetite"],
+    description: "A condition where there aren't enough healthy red blood cells to carry adequate oxygen to the body's tissues.",
+    overview: "Anemia can result from iron deficiency, vitamin B12 deficiency, blood loss, or chronic diseases. It is very common, especially in women and older adults. Symptoms develop gradually over time.",
+    selfCare: ["Eat iron-rich foods: red meat, lentils, spinach, fortified cereals","Increase vitamin C intake to boost iron absorption","Take iron or B12 supplements if recommended by a doctor","Avoid tea and coffee with meals as they reduce iron absorption","Rest more than usual while your body recovers"],
+    urgency: "medium",
+    urgencyReason: "Anemia requires a blood test to diagnose properly and may need medical treatment depending on the cause and severity.",
+    warningSigns: ["Severe fatigue affecting daily activities","Chest pain or rapid heartbeat at rest","Fainting or near-fainting episodes","Shortness of breath at rest","Yellowish skin tone (possible hemolytic anemia)"]
+  },
+  {
+    name: "Gastroenteritis / Food Poisoning",
+    keywords: ["nausea","vomiting","diarrhea","stomach pain","cramps","fever","chills","sweating","weakness"],
+    description: "Illness caused by consuming food or water contaminated with bacteria, viruses, or parasites.",
+    overview: "Food poisoning symptoms usually appear within hours to days of consuming contaminated food. Most cases resolve within 1–3 days. The greatest risk is dehydration from fluid loss.",
+    selfCare: ["Stop eating solid food until vomiting subsides","Sip oral rehydration salts or clear fluids slowly","Avoid dairy, caffeine, alcohol and fatty foods","Gradually return to bland foods as you recover","Rest and monitor for signs of dehydration"],
+    urgency: "low",
+    urgencyReason: "Most cases of food poisoning resolve without medical treatment within a few days.",
+    warningSigns: ["High fever above 38.5°C","Blood in stool","Symptoms lasting more than 3 days","Signs of severe dehydration","Neurological symptoms like blurred vision or muscle weakness"]
+  },
+  {
+    name: "Dehydration",
+    keywords: ["dizziness","headache","fatigue","dry mouth","dark urine","muscle cramps","confusion","nausea","rapid heartbeat","weakness"],
+    description: "Occurs when the body loses more fluid than it takes in, disrupting normal bodily functions.",
+    overview: "Dehydration ranges from mild (thirst, dark urine) to severe (confusion, fainting). It can result from inadequate fluid intake, vomiting, diarrhea, sweating, or heat exposure.",
+    selfCare: ["Drink water steadily — don't gulp large amounts at once","Use oral rehydration salts for moderate dehydration","Avoid alcohol and caffeine which worsen fluid loss","Eat water-rich foods: cucumber, watermelon, oranges","Rest in a cool environment if heat-related"],
+    urgency: "low",
+    urgencyReason: "Mild to moderate dehydration is easily treated at home with steady fluid intake.",
+    warningSigns: ["No urination for 8+ hours","Rapid or weak heartbeat","Sunken eyes or very dry skin and mouth","Confusion or disorientation","Fainting or extreme weakness"]
+  },
+  {
+    name: "Anxiety / Stress",
+    keywords: ["chest pain","palpitations","shortness of breath","dizziness","headache","fatigue","nausea","sweating","trembling","muscle tension","difficulty sleeping"],
+    description: "Physical symptoms triggered by psychological stress or anxiety — extremely common and treatable.",
+    overview: "Anxiety activates the body's 'fight or flight' response causing real physical symptoms. These can mimic serious medical conditions. It is one of the most common health issues worldwide.",
+    selfCare: ["Practice slow, deep breathing exercises when symptoms occur","Try progressive muscle relaxation techniques","Regular physical exercise significantly reduces anxiety","Limit caffeine and alcohol","Maintain a consistent sleep schedule","Talk to someone you trust about how you're feeling"],
+    urgency: "low",
+    urgencyReason: "Anxiety symptoms, while uncomfortable, are not usually dangerous. Always rule out physical causes first.",
+    warningSigns: ["Chest pain — always rule out cardiac causes first","Symptoms severely impacting daily life","Thoughts of self-harm — seek help immediately","Panic attacks becoming frequent or debilitating","Inability to function day-to-day due to fear"]
+  },
+  {
+    name: "Diabetes (Type 2 — Early Signs)",
+    keywords: ["fatigue","frequent urination","excessive thirst","blurred vision","slow healing","weight loss","numbness","tingling","hunger","dizziness","headache"],
+    description: "A chronic condition affecting how the body processes blood sugar. Early signs are often subtle.",
+    overview: "Type 2 diabetes develops gradually with subtle symptoms. Early detection is key to preventing serious complications. Risk factors include obesity, family history, and a sedentary lifestyle.",
+    selfCare: ["Reduce sugar and refined carbohydrate intake immediately","Increase physical activity — even 30 min walking per day helps","Maintain a healthy body weight","Eat more fibre, vegetables, and whole grains","Get a fasting blood glucose test from your doctor as soon as possible"],
+    urgency: "medium",
+    urgencyReason: "These symptoms warrant prompt blood sugar testing. Undiagnosed diabetes can cause serious complications over time.",
+    warningSigns: ["Extreme thirst combined with very frequent urination","Sudden unexplained weight loss","Fruity-smelling breath (possible diabetic ketoacidosis — emergency)","Confusion or drowsiness","Vision suddenly becoming very blurry"]
+  }
+];
+
+// TAG MANAGEMENT
+const tags = [];
+const symptomInput = document.getElementById('symptom-input');
+
+symptomInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const val = symptomInput.value.trim().replace(/,$/, '');
+    if (val) addTag(val);
+  } else if (e.key === 'Backspace' && !symptomInput.value && tags.length) {
+    removeTag(tags.length - 1);
+  }
+});
+
+function addTag(name) {
+  name = name.trim();
+  if (!name || tags.map(t => t.toLowerCase()).includes(name.toLowerCase())) return;
+  tags.push(name);
+  renderTags();
+  symptomInput.value = '';
+  symptomInput.focus();
+}
+
+function removeTag(i) {
+  tags.splice(i, 1);
+  renderTags();
+}
+
+function renderTags() {
+  document.querySelectorAll('.tag').forEach(t => t.remove());
+  const area = document.getElementById('tag-area');
+  tags.forEach((t, i) => {
+    const el = document.createElement('div');
+    el.className = 'tag';
+    el.innerHTML = `${t}<button onclick="removeTag(${i})">×</button>`;
+    area.insertBefore(el, symptomInput);
+  });
+}
+
+// MATCH LOGIC
+function matchConditions(userSymptoms) {
+  const normalized = userSymptoms.map(s => s.toLowerCase());
+  return SYMPTOM_DB.map(condition => {
+    let score = 0, matched = [];
+    condition.keywords.forEach(kw => {
+      const kwL = kw.toLowerCase();
+      normalized.forEach(us => {
+        if (us.includes(kwL) || kwL.includes(us)) {
+          score++;
+          if (!matched.includes(kw)) matched.push(kw);
+        }
+      });
+    });
+    const pct = Math.round((score / condition.keywords.length) * 100);
+    return { ...condition, score, matched, pct };
+  })
+  .filter(c => c.score > 0)
+  .sort((a, b) => b.score - a.score)
+  .slice(0, 5);
+}
+
+// MAIN
+function findInfo() {
+  if (!tags.length) { alert('Please add at least one symptom.'); return; }
+
+  const matches = matchConditions(tags);
+  const duration = document.getElementById('duration').value;
+  const severity = parseInt(document.getElementById('severity').value) || null;
+
+  document.getElementById('input-section').style.display = 'none';
+  document.getElementById('result').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (!matches.length) {
+    document.getElementById('result-content').innerHTML = `
+      <div class="no-match">
+        <strong>No specific match found</strong>
+        The symptoms you entered didn't closely match our database. Please consult a healthcare professional for a proper evaluation.
+      </div>`;
+    return;
+  }
+
+  const topUrgencies = matches.slice(0, 3).map(m => m.urgency);
+  const overallUrgency = topUrgencies.includes('high') ? 'high' : topUrgencies.includes('medium') ? 'medium' : 'low';
+  const displayUrgency = (severity && severity >= 8 && overallUrgency === 'low') ? 'medium' : overallUrgency;
+  const urgencyLabel = displayUrgency === 'high' ? '🔴 High' : displayUrgency === 'medium' ? '🟡 Medium' : '🟢 Low';
+
+  const best = matches[0];
+
+  const conditionsHTML = matches.map(c => `
+    <div class="condition-card">
+      <div class="condition-name">${c.name}</div>
+      <div class="condition-desc">${c.description}</div>
+      <div class="match-bar-wrap">
+        <div class="match-label">Symptom match: ${c.pct}% &nbsp;(${c.matched.length} of your symptoms matched)</div>
+        <div class="match-bar-bg"><div class="match-bar-fill" style="width:${Math.min(c.pct,100)}%"></div></div>
+      </div>
+    </div>`).join('');
+
+  const durationNote = duration ? `<p style="margin-top:.6rem;font-size:.85rem;color:#5eead4">Duration reported: <strong style="color:var(--teal-dark)">${duration}</strong></p>` : '';
+  const severityNote = severity ? `<p style="font-size:.85rem;color:#5eead4;margin-top:.3rem">Severity: <strong style="color:var(--teal-dark)">${severity}/10</strong>${severity >= 7 ? ' — consider seeing a doctor soon' : ''}</p>` : '';
+
+  document.getElementById('result-content').innerHTML = `
+    <div class="section">
+      <div class="section-title"><div class="sicon si-blue">📝</div>Overview</div>
+      <p>${best.overview}</p>
+      ${durationNote}${severityNote}
+    </div>
+    <div class="section">
+      <div class="section-title"><div class="sicon si-blue">🔬</div>Possibly Associated Conditions</div>
+      <p style="font-size:.8rem;color:#aaa;margin-bottom:.75rem">Based on ${tags.length} symptom(s). Ranked by match strength.</p>
+      ${conditionsHTML}
+    </div>
+    <div class="section">
+      <div class="section-title"><div class="sicon si-red">🏥</div>When to Seek Care</div>
+      <div class="urgency ${displayUrgency}">${urgencyLabel} Urgency</div>
+      <p style="margin-bottom:.8rem">${best.urgencyReason}</p>
+      <p style="font-weight:700;font-size:.85rem;margin-bottom:.4rem">Seek medical care immediately if you experience:</p>
+      <ul>${best.warningSigns.map(w=>`<li>${w}</li>`).join('')}</ul>
+    </div>
+    <div class="section">
+      <div class="section-title"><div class="sicon si-green">💊</div>General Self-Care Tips</div>
+      <p style="font-size:.8rem;color:#aaa;margin-bottom:.7rem">Based on the most likely condition. Always confirm with a professional.</p>
+      <ul>${best.selfCare.map(t=>`<li>${t}</li>`).join('')}</ul>
+    </div>
+    <div class="footer-disclaimer">
+      ⚠️ <strong>Important Disclaimer:</strong> This information sheet is for <strong>general educational purposes only</strong>. It is not a medical diagnosis and does not replace professional medical advice, examination, or treatment. If you are concerned about your health, please consult a qualified healthcare provider promptly.
+    </div>`;
+}
+
+function resetForm() {
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('input-section').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
